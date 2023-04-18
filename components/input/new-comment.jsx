@@ -58,4 +58,3 @@ function NewComment(props) {
 }
 
 export default NewComment;
-Footer
