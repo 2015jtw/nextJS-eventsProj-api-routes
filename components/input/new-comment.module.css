@@ -5,7 +5,11 @@
     background-color: #03be9f;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     padding: 1rem;
+
+    
   }
+
+  
   
   .row {
     display: flex;
@@ -40,4 +44,5 @@
   .form button {
     background-color: white;
   }
+ 
   
