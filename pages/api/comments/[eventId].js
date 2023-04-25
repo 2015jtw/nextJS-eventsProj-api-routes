@@ -1,12 +1,17 @@
 import { MongoClient } from "mongodb";
+import { connectDatabase, insertDocument, getAllDocuments } from "../../../helpers/db-utils";
 
 async function handler(req, res){
 
     const eventId = req.query.eventId;
-    const client = await MongoClient.connect('mongodb+srv://2015jtw:jhaCxiAYfdOIfaCF@cluster0.76gkoe5.mongodb.net/events?retryWrites=true&w=majority')
+    let client;
 
-
-    
+    try{
+        client = await connectDatabase();
+    }catch(e){
+        res.status(500).json({message: 'Connecting to the database failed'})
+        return;
+    }
 
     if(req.method === 'POST'){
         const {name, email, commentText} = req.body;
@@ -14,37 +19,34 @@ async function handler(req, res){
 
         if(!email.includes('@') || !name || name.trim() === '' || !commentText || commentText.trim() === ''){
             res.status(422).json({message: 'Invalid Inputs'})
+            client.close();
             return;
         }
 
-        const newComment = {
-            email,
+        const newComment = {            email,
             name,
             commentText,
             eventId
         }
 
-        const db = client.db();
-        const result = await db.collection('comments').insertOne({comment: newComment})
-        newComment.id = result.insertedId.toString();
-
-
-        console.log(result)
-        res.status(201).json({message: 'Added Comment', comment: newComment})
+        let result;
+        try{
+            result = insertDocument(client, 'comments', newComment)
+            newComment._id = result.insertedId.toString();    
+            res.status(201).json({message: 'Added Comment', comment: newComment})
+        }catch(e){
+            res.status(500).json({message: 'Inserting data to the database failed'})
+        }
     }
-
-   
 
     if(req.method === 'GET'){
-
-        const db = client.db();
-        const comment = await db.collection('comments').find().sort({_id: -1}).toArray();
-        console.log(comment)
-
-        res.status(200).json({comments: comment})
-
+        try{
+            const documents = await getAllDocuments(client, 'comments', {_id: -1})
+            res.status(200).json({comments: documents})
+        }catch(e){
+            res.status(500).json({message: 'Fetching all documents from the database failed'})
+        }
     }
-
     client.close()
 }
 
